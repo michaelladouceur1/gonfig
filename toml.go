@@ -38,5 +38,5 @@ func (tf *TOMLFile) load(config any) error {
 		return err
 	}
 
-	return toml.Unmarshal(data, config)
+	return toml.Unmarshal(data, &config)
 }

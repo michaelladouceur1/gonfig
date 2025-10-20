@@ -24,7 +24,7 @@ func validator(config AppConfig) error {
 }
 
 func main() {
-	cfg := AppConfig{
+	cfg := &AppConfig{
 		Name:        "MyApp",
 		Description: "This is my application",
 		Server: AppConfigServer{
@@ -34,7 +34,7 @@ func main() {
 	}
 
 	opts := gonfig.GonfigFileOptions{
-		Type:    gonfig.TOML,
+		Type:    gonfig.YAML,
 		RootDir: ".",
 		Name:    "config",
 		Watch:   true,
@@ -58,4 +58,6 @@ func main() {
 	}
 
 	config.PrintConfig()
+
+	select {}
 }

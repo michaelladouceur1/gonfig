@@ -37,5 +37,5 @@ func (jf *JSONFile) load(config any) error {
 		return err
 	}
 
-	return json.Unmarshal(data, config)
+	return json.Unmarshal(data, &config)
 }

@@ -38,5 +38,5 @@ func (yf *YAMLFile) load(config any) error {
 		return err
 	}
 
-	return yaml.Unmarshal(data, config)
+	return yaml.Unmarshal(data, &config)
 }

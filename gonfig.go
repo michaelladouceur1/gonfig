@@ -7,12 +7,12 @@ import (
 )
 
 type Gonfig[T any] struct {
-	Config     T
+	Config     *T
 	file       GonfigFile
 	validators []func(T) error
 }
 
-func NewGonfig[T any](config T, fileOptions GonfigFileOptions) (*Gonfig[T], error) {
+func NewGonfig[T any](config *T, fileOptions GonfigFileOptions) (*Gonfig[T], error) {
 	gonfig := &Gonfig[T]{
 		Config: config,
 	}
@@ -55,16 +55,16 @@ func NewGonfig[T any](config T, fileOptions GonfigFileOptions) (*Gonfig[T], erro
 		go func() {
 			for range callbackChan {
 				// The config will be reloaded regardless of validation outcome
-				if err := gonfig.file.load(&gonfig.Config); err != nil {
+				if err := gonfig.file.load(gonfig.Config); err != nil {
 					log.Println("Error loading config on config update:", err)
 					continue
 				}
-				err := gonfig.validate(gonfig.Config)
+				gonfig.PrintConfig()
+				err := gonfig.validate(*gonfig.Config)
 				if err != nil {
 					log.Println("Validation error on config update:", err)
 					continue
 				}
-				gonfig.PrintConfig()
 			}
 		}()
 	}
@@ -77,7 +77,7 @@ func (g *Gonfig[T]) AddValidator(validator func(T) error) {
 }
 
 func (g *Gonfig[T]) Validate() error {
-	return g.validate(g.Config)
+	return g.validate(*g.Config)
 }
 
 func (g *Gonfig[T]) Update(data T) error {
@@ -85,16 +85,16 @@ func (g *Gonfig[T]) Update(data T) error {
 	if err != nil {
 		return err
 	}
-	g.Config = data
+	g.Config = &data
 	return nil
 }
 
 func (g *Gonfig[T]) Save() error {
-	return g.file.save(&g.Config)
+	return g.file.save(g.Config)
 }
 
 func (g *Gonfig[T]) Load() error {
-	return g.file.load(&g.Config)
+	return g.file.load(g.Config)
 }
 
 func (g *Gonfig[T]) PrintConfig() error {
@@ -108,9 +108,9 @@ func (g *Gonfig[T]) PrintConfig() error {
 
 func (g *Gonfig[T]) initialize() error {
 	if !g.file.fileExists() {
-		return g.file.save(&g.Config)
+		return g.file.save(g.Config)
 	}
-	return g.file.load(&g.Config)
+	return g.file.load(g.Config)
 }
 
 func (g *Gonfig[T]) validate(config T) error {

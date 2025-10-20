@@ -47,7 +47,7 @@ func (m *MockFile) watchFileChanges(ch chan fsnotify.Event) error {
 // Test NewGonfig with mock file
 func TestNewGonfig(t *testing.T) {
 	cfg := TestConfig{Name: "Alice", Age: 30}
-	g := &Gonfig[TestConfig]{Config: cfg}
+	g := &Gonfig[TestConfig]{Config: &cfg}
 	mockFile := &MockFile{exists: false}
 	g.file = mockFile
 
@@ -73,7 +73,7 @@ func TestNewGonfig(t *testing.T) {
 // Test validators
 func TestValidators(t *testing.T) {
 	cfg := TestConfig{Name: "Alice", Age: 30}
-	g := &Gonfig[TestConfig]{Config: cfg}
+	g := &Gonfig[TestConfig]{Config: &cfg}
 	called := false
 	g.AddValidator(func(c TestConfig) error {
 		called = true
@@ -100,7 +100,7 @@ func TestValidators(t *testing.T) {
 // Test Save and Load
 func TestSaveLoad(t *testing.T) {
 	cfg := TestConfig{Name: "Alice", Age: 30}
-	g := &Gonfig[TestConfig]{Config: cfg}
+	g := &Gonfig[TestConfig]{Config: &cfg}
 	mockFile := &MockFile{}
 	g.file = mockFile
 
