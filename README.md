@@ -1,4 +1,4 @@
-Collecting workspace information# Gonfig
+# Gonfig
 
 Gonfig is a Go library for managing application configuration files with support for JSON and YAML formats, file watching, and validation. It provides a generic interface for loading, saving, and validating configuration structs, and automatically reloads configuration when the file changes.
 
