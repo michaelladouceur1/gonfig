@@ -54,7 +54,7 @@ c, err := gonfig.NewGonfig(&Config{
         Email:    "admin@example.com",
     },
 }, gonfig.GonfigFileOptions{
-    Type:    gonfig.YAML, // or gonfig.JSON
+    Type:    gonfig.YAML, // or gonfig.JSON and gonfig.TOML
     RootDir: ".",
     Name:    "config",
     Watch:   true, // enable file watching
@@ -121,6 +121,7 @@ If `Watch` is enabled, Gonfig will reload the config and re-validate automatical
 
 - JSON (`gonfig.JSON`)
 - YAML (`gonfig.YAML`)
+- TOML (`gonfig.TOML`)
 
 ## License
 

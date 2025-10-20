@@ -31,6 +31,12 @@ func NewGonfig[T any](config T, fileOptions GonfigFileOptions) (*Gonfig[T], erro
 			return nil, err
 		}
 		file = yamlConfig
+	case TOML:
+		tomlConfig, err := NewTOMLFile(fileOptions)
+		if err != nil {
+			return nil, err
+		}
+		file = tomlConfig
 	default:
 		return nil, nil
 	}

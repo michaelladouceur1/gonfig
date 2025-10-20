@@ -2,13 +2,15 @@ package main
 
 import "github.com/michaelladouceur1/gonfig"
 
+type AppConfigServer struct {
+	Host string `json:"host" yaml:"host" toml:"host"`
+	Port int    `json:"port" yaml:"port" toml:"port"`
+}
+
 type AppConfig struct {
-	Name        string `json:"name" yaml:"name"`
-	Description string `json:"description" yaml:"description"`
-	Server      struct {
-		Host string `json:"host" yaml:"host"`
-		Port int    `json:"port" yaml:"port"`
-	} `json:"server" yaml:"server"`
+	Name        string          `json:"name" yaml:"name" toml:"name"`
+	Description string          `json:"description" yaml:"description" toml:"description"`
+	Server      AppConfigServer `json:"server" yaml:"server" toml:"server"`
 }
 
 func validator(config AppConfig) error {
@@ -25,17 +27,14 @@ func main() {
 	cfg := AppConfig{
 		Name:        "MyApp",
 		Description: "This is my application",
-		Server: struct {
-			Host string `json:"host" yaml:"host"`
-			Port int    `json:"port" yaml:"port"`
-		}{
+		Server: AppConfigServer{
 			Host: "localhost",
 			Port: 8080,
 		},
 	}
 
 	opts := gonfig.GonfigFileOptions{
-		Type:    gonfig.YAML,
+		Type:    gonfig.TOML,
 		RootDir: ".",
 		Name:    "config",
 		Watch:   true,

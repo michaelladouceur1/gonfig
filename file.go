@@ -13,7 +13,7 @@ type FileType string
 const (
 	JSON FileType = "json"
 	YAML FileType = "yaml"
-	// TOMLFileType FileType = "toml"
+	TOML FileType = "toml"
 )
 
 type File struct {
@@ -29,6 +29,10 @@ type JSONFile struct {
 }
 
 type YAMLFile struct {
+	File
+}
+
+type TOMLFile struct {
 	File
 }
 
