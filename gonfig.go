@@ -37,6 +37,10 @@ func NewGonfig[T any](config T, fileOptions GonfigFileOptions) (*Gonfig[T], erro
 
 	gonfig.file = file
 
+	if err := gonfig.initialize(); err != nil {
+		return nil, err
+	}
+
 	if fileOptions.Watch {
 		callbackChan := make(chan fsnotify.Event)
 		if err := gonfig.file.watchFileChanges(callbackChan); err != nil {
@@ -57,10 +61,6 @@ func NewGonfig[T any](config T, fileOptions GonfigFileOptions) (*Gonfig[T], erro
 				gonfig.PrintConfig()
 			}
 		}()
-	}
-
-	if err := gonfig.initialize(); err != nil {
-		return nil, err
 	}
 
 	return gonfig, nil
