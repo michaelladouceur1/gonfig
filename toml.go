@@ -1,42 +1,23 @@
 package gonfig
 
 import (
-	"os"
-
 	"github.com/pelletier/go-toml/v2"
 )
 
-func NewTOMLFile(options GonfigFileOptions) (*TOMLFile, error) {
-	tf := &TOMLFile{
-		File: File{
-			rootDir: options.RootDir,
-			name:    options.Name,
-			path:    options.RootDir + "/" + options.Name + ".toml",
-		},
-	}
-	return tf, nil
+type TOMLFile struct{}
+
+func NewTOMLFile(options GonfigFileOptions) *TOMLFile {
+	return &TOMLFile{}
 }
 
-func (tf *TOMLFile) save(config any) error {
-	tf.mu.Lock()
-	defer tf.mu.Unlock()
-
+func (tf *TOMLFile) encode(config any) ([]byte, error) {
 	data, err := toml.Marshal(config)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	return os.WriteFile(tf.path, data, 0644)
+	return data, nil
 }
 
-func (tf *TOMLFile) load(config any) error {
-	tf.mu.Lock()
-	defer tf.mu.Unlock()
-
-	data, err := os.ReadFile(tf.path)
-	if err != nil {
-		return err
-	}
-
-	return toml.Unmarshal(data, &config)
+func (tf *TOMLFile) decode(data []byte, config any) error {
+	return toml.Unmarshal(data, config)
 }

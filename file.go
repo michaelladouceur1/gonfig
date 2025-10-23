@@ -22,26 +22,12 @@ type File struct {
 	path    string
 	mu      sync.Mutex
 	watcher *fsnotify.Watcher
+	encoder FileEncoder
 }
 
-type JSONFile struct {
-	File
-}
-
-type YAMLFile struct {
-	File
-}
-
-type TOMLFile struct {
-	File
-}
-
-type GonfigFile interface {
-	fileExists() bool
-	load(config any) error
-	save(config any) error
-	watchFileChanges(chan fsnotify.Event) error
-	toString() (string, error)
+type FileEncoder interface {
+	encode(config any) ([]byte, error)
+	decode(data []byte, config any) error
 }
 
 type GonfigFileOptions struct {
@@ -51,21 +37,63 @@ type GonfigFileOptions struct {
 	Watch   bool
 }
 
+func NewFile(options GonfigFileOptions) *File {
+	var encoder FileEncoder
+
+	switch options.Type {
+	case JSON:
+		encoder = &JSONFile{}
+	case YAML:
+		encoder = &YAMLFile{}
+	case TOML:
+		encoder = &TOMLFile{}
+	default:
+		log.Fatalf("Unsupported file type: %s", options.Type)
+	}
+
+	return &File{
+		rootDir: options.RootDir,
+		name:    options.Name,
+		path:    options.RootDir + "/" + options.Name + "." + string(options.Type),
+		encoder: encoder,
+	}
+}
+
 func (f *File) fileExists() bool {
 	_, err := os.Stat(f.path)
 	return !os.IsNotExist(err)
 }
 
-func (f *File) toString() (string, error) {
+func (f *File) toString(config any) (string, error) {
+	data, err := f.encoder.encode(config)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func (f *File) load(config any) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	data, err := os.ReadFile(f.path)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return string(data), nil
+	return f.encoder.decode(data, config)
+}
+
+func (f *File) save(config any) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	data, err := f.encoder.encode(config)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(f.path, data, 0644)
 }
 
 func (f *File) watchFileChanges(callbackChan chan fsnotify.Event) error {

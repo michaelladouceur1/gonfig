@@ -8,7 +8,7 @@ import (
 
 type Gonfig[T any] struct {
 	Config     *T
-	file       GonfigFile
+	file       *File
 	validators []func(T) error
 }
 
@@ -17,31 +17,7 @@ func NewGonfig[T any](config *T, fileOptions GonfigFileOptions) (*Gonfig[T], err
 		Config: config,
 	}
 
-	var file GonfigFile
-	switch fileOptions.Type {
-	case JSON:
-		jsonConfig, err := NewJSONFile(fileOptions)
-		if err != nil {
-			return nil, err
-		}
-		file = jsonConfig
-	case YAML:
-		yamlConfig, err := NewYAMLFile(fileOptions)
-		if err != nil {
-			return nil, err
-		}
-		file = yamlConfig
-	case TOML:
-		tomlConfig, err := NewTOMLFile(fileOptions)
-		if err != nil {
-			return nil, err
-		}
-		file = tomlConfig
-	default:
-		return nil, nil
-	}
-
-	gonfig.file = file
+	gonfig.file = NewFile(fileOptions)
 
 	if err := gonfig.initialize(); err != nil {
 		return nil, err
@@ -98,11 +74,11 @@ func (g *Gonfig[T]) Load() error {
 }
 
 func (g *Gonfig[T]) PrintConfig() error {
-	data, err := g.file.toString()
+	data, err := g.file.toString(g.Config)
 	if err != nil {
 		return err
 	}
-	println(string(data))
+	println(data)
 	return nil
 }
 
