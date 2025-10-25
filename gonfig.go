@@ -2,6 +2,7 @@ package gonfig
 
 import (
 	"log"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 )
@@ -24,23 +25,9 @@ func NewGonfig[T any](config *T, fileOptions GonfigFileOptions) (*Gonfig[T], err
 	}
 
 	if fileOptions.Watch {
-		callbackChan := make(chan fsnotify.Event)
-		if err := gonfig.file.watchFileChanges(callbackChan); err != nil {
-			return nil, err
-		}
 		go func() {
-			for range callbackChan {
-				// The config will be reloaded regardless of validation outcome
-				if err := gonfig.file.load(gonfig.Config); err != nil {
-					log.Println("Error loading config on config update:", err)
-					continue
-				}
-				gonfig.PrintConfig()
-				err := gonfig.validate(*gonfig.Config)
-				if err != nil {
-					log.Println("Validation error on config update:", err)
-					continue
-				}
+			if err := gonfig.watchFile(fileOptions.ValidationMode); err != nil {
+				log.Println("Error watching config file:", err)
 			}
 		}()
 	}
@@ -95,5 +82,44 @@ func (g *Gonfig[T]) validate(config T) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (g *Gonfig[T]) watchFile(mode ValidationMode) error {
+	callbackChan := make(chan fsnotify.Event)
+	if err := g.file.watchFile(callbackChan); err != nil {
+		return err
+	}
+
+	for range callbackChan {
+		if mode == VMRevert {
+			copyConfig := *g.Config
+			if err := g.file.load(&copyConfig); err != nil {
+				log.Println("Error loading config on config update:", err)
+				continue
+			}
+			err := g.validate(copyConfig)
+			if err != nil {
+				time.Sleep(100 * time.Millisecond)
+				log.Println("Validation error on config update:", err)
+				if saveErr := g.file.saveSilent(g.Config); saveErr != nil {
+					log.Println("Error reverting to last known good config:", saveErr)
+				}
+				continue
+			}
+		} else if mode == VMWarn {
+			if err := g.file.load(g.Config); err != nil {
+				log.Println("Error loading config on config update:", err)
+				continue
+			}
+			err := g.validate(*g.Config)
+			if err != nil {
+				log.Println("Validation warning on config update:", err)
+			}
+		} else {
+			log.Println("Unknown validation mode:", mode)
+		}
+	}
+
 	return nil
 }

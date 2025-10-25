@@ -9,20 +9,25 @@ import (
 )
 
 type FileType string
+type ValidationMode string
 
 const (
 	JSON FileType = "json"
 	YAML FileType = "yaml"
 	TOML FileType = "toml"
+
+	VMRevert ValidationMode = "revert"
+	VMWarn   ValidationMode = "warn"
 )
 
 type File struct {
-	rootDir string
-	name    string
-	path    string
-	mu      sync.Mutex
-	watcher *fsnotify.Watcher
-	encoder FileEncoder
+	rootDir    string
+	name       string
+	path       string
+	mu         sync.Mutex
+	encoder    FileEncoder
+	watcher    *fsnotify.Watcher
+	pauseWatch bool
 }
 
 type FileEncoder interface {
@@ -31,10 +36,11 @@ type FileEncoder interface {
 }
 
 type GonfigFileOptions struct {
-	Type    FileType
-	RootDir string
-	Name    string
-	Watch   bool
+	Type           FileType
+	RootDir        string
+	Name           string
+	Watch          bool
+	ValidationMode ValidationMode
 }
 
 func NewFile(options GonfigFileOptions) *File {
@@ -52,10 +58,11 @@ func NewFile(options GonfigFileOptions) *File {
 	}
 
 	return &File{
-		rootDir: options.RootDir,
-		name:    options.Name,
-		path:    options.RootDir + "/" + options.Name + "." + string(options.Type),
-		encoder: encoder,
+		rootDir:    options.RootDir,
+		name:       options.Name,
+		path:       options.RootDir + "/" + options.Name + "." + string(options.Type),
+		encoder:    encoder,
+		pauseWatch: false,
 	}
 }
 
@@ -96,7 +103,15 @@ func (f *File) save(config any) error {
 	return os.WriteFile(f.path, data, 0644)
 }
 
-func (f *File) watchFileChanges(callbackChan chan fsnotify.Event) error {
+func (f *File) saveSilent(config any) error {
+	f.pauseWatch = true
+	err := f.save(config)
+	f.pauseWatch = false
+
+	return err
+}
+
+func (f *File) watchFile(callbackChan chan fsnotify.Event) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -114,6 +129,9 @@ func (f *File) watchFileChanges(callbackChan chan fsnotify.Event) error {
 			case event, ok := <-f.watcher.Events:
 				if !ok {
 					return
+				}
+				if f.pauseWatch {
+					continue
 				}
 				callbackChan <- event
 			case err, ok := <-f.watcher.Errors:
