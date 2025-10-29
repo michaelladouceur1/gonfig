@@ -3,6 +3,7 @@ package gonfig
 import (
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
@@ -60,7 +61,7 @@ func NewFile(options GonfigFileOptions) *File {
 	return &File{
 		rootDir:    options.RootDir,
 		name:       options.Name,
-		path:       options.RootDir + "/" + options.Name + "." + string(options.Type),
+		path:       filepath.Join(options.RootDir, options.Name+"."+string(options.Type)),
 		encoder:    encoder,
 		pauseWatch: false,
 	}
